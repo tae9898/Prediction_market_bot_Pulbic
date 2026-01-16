@@ -54,10 +54,11 @@ def setup_keys():
             funder=funder
         )
 
-        print("Creating API Key on Polymarket...")
-        creds = client.create_api_key()
+        print("Creating or Deriving API Key on Polymarket...")
+        # create_or_derive_api_creds handles both creation and existing keys
+        creds = client.create_or_derive_api_creds()
         
-        print("\nAPI Key created successfully!")
+        print("\nAPI Key retrieved successfully!")
         
         wallet_data = {
             "private_key": private_key,
