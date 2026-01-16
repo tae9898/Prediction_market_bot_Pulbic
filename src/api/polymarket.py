@@ -8,26 +8,40 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class PolymarketAPI:
-    def __init__(self):
-        self.host = ConfigLoader.get_env_var("POLYMARKET_HOST", "https://clob.polymarket.com")
-        self.chain_id = int(ConfigLoader.get_env_var("CHAIN_ID", 137))
-        self.private_key = ConfigLoader.get_env_var("PRIVATE_KEY")
+    def __init__(self, private_key, funder, api_key=None, api_secret=None, api_passphrase=None, chain_id=137, host="https://clob.polymarket.com", signature_type=2):
+        self.host = host
+        self.chain_id = int(chain_id)
+        self.private_key = private_key
+        self.funder = funder
+        self.signature_type = int(signature_type)
         
-        if not self.private_key:
-            raise ValueError("PRIVATE_KEY not found in .env")
+        if not self.private_key or not self.funder:
+            raise ValueError("private_key and funder are required")
 
         try:
-            # Initialize client with private key
+            from py_clob_client.clob_types import ApiCreds
+            
+            # Initialize client with full credentials if available
+            creds = None
+            if api_key and api_secret and api_passphrase:
+                creds = ApiCreds(
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    api_passphrase=api_passphrase
+                )
+
             self.client = ClobClient(
                 self.host,
                 key=self.private_key,
-                chain_id=self.chain_id
+                chain_id=self.chain_id,
+                signature_type=self.signature_type,
+                funder=self.funder,
+                api_creds=creds
             )
             
-            # Derive and set API credentials for L2 auth
-            creds = self.client.create_or_derive_api_creds()
-            self.client.set_api_creds(creds)
-            logger.info("Polymarket API initialized successfully.")
+            # Mask private key for logging
+            masked_key = self.private_key[:6] + "..." if self.private_key else "None"
+            logger.info(f"Polymarket API initialized for {self.funder} (Key: {masked_key})")
             
         except Exception as e:
             logger.error(f"Failed to initialize Polymarket API: {e}")

@@ -3,9 +3,9 @@
 # Activate virtual environment
 source .venv/bin/activate
 
-# Check if .env exists
-if [ ! -f .env ]; then
-    echo "Error: .env file not found. Please copy .env.example to .env and fill in your keys."
+# Check if wallets.json exists
+if [ ! -f wallets.json ]; then
+    echo "Error: wallets.json not found. Please run 'python -m scripts.setup_api_keys' to add at least one wallet."
     exit 1
 fi
 
