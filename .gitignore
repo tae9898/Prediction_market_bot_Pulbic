@@ -1,0 +1,6 @@
+dev_log.md
+.env
+config.json
+src/strategies/private_*.py
+__pycache__/
+*.pyc
