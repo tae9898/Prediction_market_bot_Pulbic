@@ -88,6 +88,14 @@ class PolymarketAPI:
             logger.error(f"Error cancelling orders: {e}")
             raise
 
+    def get_order_book(self, token_id):
+        """Get order book for a specific token."""
+        try:
+            return self.client.get_order_book(token_id)
+        except Exception as e:
+            logger.error(f"Error fetching Polymarket orderbook for {token_id}: {e}")
+            raise
+
     def get_balance(self):
         """Get account balance/allowance info if available."""
         # Note: This usually checks allowance for the specific asset

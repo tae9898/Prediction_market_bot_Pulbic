@@ -12,9 +12,18 @@ Do not publish this repository publicly without removing sensitive strategy file
   - `trader.py`: Monitors market and executes orders based on strategy.
   - `redeemer.py`: Automatically redeems positions (Requires Web3 implementation).
 
-## Setup
+## Managing Markets
 
-1. **Environment Setup**:
+Instead of manually finding Token IDs, use the helper script:
+
+```bash
+# Search for BTC markets and add to 'main' wallet
+./.venv/bin/python -m scripts.add_market BTC main
+```
+
+1. Enter a keyword (e.g., `BTC`, `ETH`, `TRUMP`).
+2. Select the desired market from the list.
+3. The bot will automatically add it to `config.json` and set the Binance pair to `{KEYWORD}/USDT`.
    Copy `.env.example` to `.env`.
    ```bash
    cp .env.example .env

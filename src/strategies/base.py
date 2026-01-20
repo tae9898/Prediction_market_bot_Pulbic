@@ -8,6 +8,7 @@ class BaseStrategy(ABC):
     def should_enter(self, market_data):
         """
         Analyze market data and decide whether to enter a trade.
+        market_data: dict containing prices, orderbooks, etc.
         Returns: boolean
         """
         pass

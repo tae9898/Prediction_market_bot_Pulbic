@@ -5,6 +5,8 @@ import os
 from src.api.polymarket import PolymarketAPI
 from src.utils.config_loader import ConfigLoader
 from src.strategies.simple_strategy import SimpleStrategy
+from src.utils.orderbook_manager import OrderBookManager
+from src.utils.market_resolver import MarketResolver
 
 # Setup logging
 logging.basicConfig(
@@ -36,13 +38,16 @@ def main():
             logger.warning("No wallets found in wallets.json. Please run scripts/setup_api_keys.py first.")
             return
 
+        # Initialize Resolver
+        resolver = MarketResolver()
+
         # Initialize API instances for each wallet
-        # Cache them to avoid creating multiple clients for the same wallet
         api_instances = {} 
-        
+        ob_managers = {} 
+
         for label, w in wallets_data.items():
             try:
-                api_instances[label] = PolymarketAPI(
+                api = PolymarketAPI(
                     private_key=w.get("private_key"),
                     funder=w.get("funder"),
                     api_key=w.get("api_key"),
@@ -50,21 +55,36 @@ def main():
                     api_passphrase=w.get("api_passphrase"),
                     signature_type=w.get("signature_type", 2)
                 )
+                api_instances[label] = api
+                ob_managers[label] = OrderBookManager(api)
             except Exception as e:
                 logger.error(f"Failed to initialize wallet '{label}': {e}")
 
         # Initialize strategies
         active_strategies = []
         for m in markets:
+            # Resolve Token ID if missing
+            if not m.get("token_id") and m.get("keyword"):
+                resolved_id = resolver.resolve_token_id(m.get("keyword"))
+                if resolved_id:
+                    m["token_id"] = resolved_id
+                else:
+                    logger.error(f"Could not resolve market for keyword: {m.get('keyword')}")
+                    continue
+
+            if not m.get("token_id"):
+                 logger.error(f"Market config missing 'token_id' or valid 'keyword': {m}")
+                 continue
+
             strat_name = m.get("strategy")
             wallet_label = m.get("wallet_label", "main")
             
-            # Check if wallet exists
             if wallet_label not in api_instances:
                 logger.error(f"Wallet '{wallet_label}' not found for market {m.get('description')}. Skipping.")
                 continue
                 
             api = api_instances[wallet_label]
+            ob_manager = ob_managers[wallet_label]
             strat_cls = STRATEGY_MAP.get(strat_name)
             
             if strat_cls:
@@ -72,7 +92,8 @@ def main():
                 active_strategies.append({
                     "market": m,
                     "strategy": strategy_instance,
-                    "api": api,  # Assign the specific API instance for this market
+                    "api": api,
+                    "ob_manager": ob_manager,
                     "wallet_label": wallet_label
                 })
                 logger.info(f"Loaded strategy '{strat_name}' for market {m.get('description')} using wallet '{wallet_label}'")
@@ -86,40 +107,59 @@ def main():
                 market = item["market"]
                 strategy = item["strategy"]
                 api = item["api"]
+                ob_manager = item["ob_manager"]
+                
                 token_id = market["token_id"]
+                binance_symbol = market.get("binance_symbol") # e.g. "BTC/USDT"
                 
                 if token_id == "REPLACE_WITH_TOKEN_ID":
                     continue
 
                 try:
-                    # Fetch current price
-                    price_resp = api.get_price(token_id, side="buy")
+                    # 1. Fetch Combined Data (Orderbooks from both)
+                    market_data = ob_manager.get_combined_data(token_id, binance_symbol)
+                    market_data["token_id"] = token_id
                     
-                    current_price = None
-                    if price_resp:
-                        if isinstance(price_resp, dict):
-                            current_price = float(price_resp.get('price', 0))
-                        else:
-                            current_price = float(price_resp)
+                    # 2. Extract Polymarket Price from Orderbook (Best Ask)
+                    current_price = 0.0
+                    poly_ob = market_data.get("polymarket")
+                    
+                    # Polymarket OB structure checking
+                    # It typically has 'asks' and 'bids'. Asks are sorted ascending (lowest price first).
+                    if poly_ob:
+                        # Access 'asks' safely whether it's an object or dict
+                        asks = getattr(poly_ob, 'asks', []) or poly_ob.get('asks', [])
+                        
+                        if asks and len(asks) > 0:
+                            best_ask = asks[0]
+                            # Handle different formats: object with .price or list/tuple [price, size]
+                            try:
+                                if hasattr(best_ask, 'price'):
+                                    current_price = float(best_ask.price)
+                                elif isinstance(best_ask, (list, tuple)):
+                                    current_price = float(best_ask[0])
+                                elif isinstance(best_ask, dict):
+                                    current_price = float(best_ask.get('price', 0))
+                                else:
+                                    current_price = float(best_ask) # Direct string/float
+                            except ValueError:
+                                current_price = 0.0
 
-                    market_data = {
-                        "token_id": token_id,
-                        "price": current_price
-                    }
+                    market_data["price"] = current_price
 
-                    if current_price is not None:
-                        if strategy.should_enter(market_data):
-                            logger.info(f"Signal detected for {token_id} at price {current_price} (Wallet: {item['wallet_label']})")
-                            
-                            order_details = strategy.get_order_details(market_data)
-                            
-                            # Execute Order
-                            api.place_order(
-                                token_id=order_details['token_id'],
-                                price=order_details['price'],
-                                size=order_details['size'],
-                                side=order_details['side']
-                            )
+                    # 3. Strategy Execution
+                    if strategy.should_enter(market_data):
+                        logger.info(f"Signal detected for {token_id} at {current_price} (Wallet: {item['wallet_label']})")
+                        
+                        order_details = strategy.get_order_details(market_data)
+                        
+                        # Execute Order
+                        api.place_order(
+                            token_id=order_details['token_id'],
+                            price=order_details['price'],
+                            size=order_details['size'],
+                            side=order_details['side']
+                        )
                 except Exception as e:
                     logger.error(f"Error processing {token_id} (Wallet: {item['wallet_label']}): {e}")
             
