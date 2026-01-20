@@ -20,3 +20,10 @@ class BaseStrategy(ABC):
         Returns: dict with {'price': float, 'size': float, 'side': 'BUY'|'SELL', 'token_id': str}
         """
         pass
+
+    @property
+    def requires_binance(self):
+        """
+        Override this property to True if the strategy needs Binance data.
+        """
+        return False

@@ -137,15 +137,40 @@ def main():
                 ob_manager = item["ob_manager"]
                 
                 token_id = market["token_id"]
-                binance_symbol = market.get("binance_symbol") # e.g. "BTC/USDT"
+                binance_symbol = market.get("binance_symbol")
+                
+                # Check if strategy requires Binance data
+                use_binance = strategy.requires_binance
                 
                 if token_id == "REPLACE_WITH_TOKEN_ID":
                     continue
 
                 try:
-                    # 1. Fetch Combined Data (Orderbooks from both)
-                    market_data = ob_manager.get_combined_data(token_id, binance_symbol)
-                    market_data["token_id"] = token_id
+                    # 1. Fetch Combined Data
+                    # OrderBookManager handles binance fetching internally if symbol provided,
+                    # but we want to control it via flag.
+                    
+                    market_data = {
+                        "token_id": token_id,
+                        "polymarket": None,
+                        "binance": None,
+                        "price": 0.0
+                    }
+
+                    # Fetch Polymarket Orderbook
+                    try:
+                        poly_ob = ob_manager.poly_api.get_order_book(token_id)
+                        market_data["polymarket"] = poly_ob
+                    except Exception as e:
+                        logger.error(f"Error fetching Polymarket OB: {e}")
+
+                    # Fetch Binance Orderbook (Only if enabled)
+                    if use_binance and binance_symbol:
+                        try:
+                            binance_ob = ob_manager.binance_api.get_order_book(binance_symbol)
+                            market_data["binance"] = binance_ob
+                        except Exception as e:
+                            logger.error(f"Error fetching Binance OB: {e}")
                     
                     # 2. Extract Polymarket Price from Orderbook (Best Ask)
                     current_price = 0.0
