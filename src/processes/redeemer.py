@@ -4,13 +4,10 @@ import os
 import requests
 from dotenv import load_dotenv
 from src.utils.ctf_handler import CTFHandler
+from src.utils.logger import setup_logger
 
-# Setup Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("Redeemer")
+# Setup Logging with rotation
+logger = setup_logger("Redeemer", "redeemer.log")
 
 DATA_API = "https://data-api.polymarket.com/positions"
 

@@ -7,13 +7,10 @@ from src.utils.config_loader import ConfigLoader
 from src.strategies.simple_strategy import SimpleStrategy
 from src.utils.orderbook_manager import OrderBookManager
 from src.utils.market_resolver import MarketResolver
+from src.utils.logger import setup_logger
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("Trader")
+# Setup logging with rotation
+logger = setup_logger("Trader", "trader.log")
 
 # Strategy Registry
 STRATEGY_MAP = {
