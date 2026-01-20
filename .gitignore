@@ -5,3 +5,4 @@ src/strategies/private_*.py
 __pycache__/
 *.pyc
 wallets.json
+reference_repo/

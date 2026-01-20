@@ -20,11 +20,33 @@ STRATEGY_MAP = {
     "simple": SimpleStrategy
 }
 
-def load_wallets():
-    if os.path.exists("wallets.json"):
-        with open("wallets.json", 'r') as f:
-            return json.load(f)
-    return {}
+def load_wallets_from_env():
+    wallets = {}
+    
+    # 1. Reload env to ensure fresh keys are loaded
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+    
+    # 2. Scan environ for WALLET_{LABEL}_PRIVATE_KEY
+    for key, val in os.environ.items():
+        if key.startswith("WALLET_") and key.endswith("_PRIVATE_KEY"):
+            # Extract Label: WALLET_MAIN_PRIVATE_KEY -> MAIN
+            parts = key.split("_")
+            # parts[0] = WALLET, parts[-1] = KEY, parts[-2] = PRIVATE
+            # Label is everything in between
+            if len(parts) >= 4:
+                label = "_".join(parts[1:-2]).lower() # internal label use lower case
+                prefix = "_".join(parts[:-2]) # WALLET_MAIN
+                
+                wallets[label] = {
+                    "private_key": val,
+                    "funder": os.environ.get(f"{prefix}_FUNDER"),
+                    "api_key": os.environ.get(f"{prefix}_API_KEY"),
+                    "api_secret": os.environ.get(f"{prefix}_API_SECRET"),
+                    "api_passphrase": os.environ.get(f"{prefix}_API_PASSPHRASE"),
+                    "signature_type": int(os.environ.get(f"{prefix}_SIGNATURE_TYPE", 2))
+                }
+    return wallets
 
 def main():
     try:
@@ -32,21 +54,26 @@ def main():
         markets = loader._config.get("markets", [])
         trading_config = loader.get_trading_config()
         
-        # Load all wallets
-        wallets_data = load_wallets()
+        # Load all wallets from ENV
+        wallets_data = load_wallets_from_env()
+        
         if not wallets_data:
-            logger.warning("No wallets found in wallets.json. Please run scripts/setup_api_keys.py first.")
-            return
-
+            logger.warning("No wallets found in environment variables. Please run scripts/setup_api_keys.py.")
+            # Don't return, keep running just in case hot-reload works or user fixes it
+        
         # Initialize Resolver
         resolver = MarketResolver()
 
-        # Initialize API instances for each wallet
+        # Initialize API instances
         api_instances = {} 
         ob_managers = {} 
 
         for label, w in wallets_data.items():
             try:
+                # Skip incomplete wallets
+                if not w["private_key"] or not w["funder"]:
+                    continue
+                    
                 api = PolymarketAPI(
                     private_key=w.get("private_key"),
                     funder=w.get("funder"),
