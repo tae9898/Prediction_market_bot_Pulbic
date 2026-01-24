@@ -6,3 +6,5 @@ __pycache__/
 *.pyc
 wallets.json
 reference_repo/
+.venv/
+AGENTS.md
