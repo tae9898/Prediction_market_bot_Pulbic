@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-01-04T03:38:34.928526",
+  "knowledge": {
+    "endpoints": {
+      "prices": {
+        "url": "/prices",
+        "method": "GET"
+      },
+      "book": {
+        "url": "https://clob.polymarket.com/book",
+        "method": "GET",
+        "description": "Get orderbook for a token",
+        "parameters": {
+          "token_id": "Token ID to get book for"
+        }
+      },
+      "markets": {
+        "url": "https://gamma-api.polymarket.com/events",
+        "method": "GET",
+        "description": "Get market events and information",
+        "parameters": {
+          "slug": "Market slug identifier"
+        }
+      },
+      "order": {
+        "url": "https://clob.polymarket.com/order",
+        "method": "POST",
+        "description": "Place a new order",
+        "parameters": {
+          "order": "Signed order object"
+        }
+      },
+      "cancel": {
+        "url": "https://clob.polymarket.com/cancel",
+        "method": "DELETE",
+        "description": "Cancel an existing order",
+        "parameters": {
+          "orderId": "Order ID to cancel"
+        }
+      }
+    },
+    "examples": {
+      "init_client": "\nfrom py_clob_client.client import ClobClient\n\nclient = ClobClient(\n    host=\"https://clob.polymarket.com\",\n    key=PRIVATE_KEY,\n    chain_id=137,  # Polygon\n    signature_type=2,  # POLY_GNOSIS_SAFE\n)\n",
+      "place_order": "\nfrom py_clob_client.clob_types import MarketOrderArgs\n\norder_args = MarketOrderArgs(\n    token_id=TOKEN_ID,\n    amount=10.0,  # USDC\n)\n\nresponse = client.create_and_post_order(order_args)\n",
+      "get_book": "\n# Using aiohttp\nasync with aiohttp.ClientSession() as session:\n    url = f\"https://clob.polymarket.com/book?token_id={token_id}\"\n    async with session.get(url) as resp:\n        book = await resp.json()\n        bids = book.get(\"bids\", [])\n        asks = book.get(\"asks\", [])\n"
+    },
+    "auth": {}
+  }
+}

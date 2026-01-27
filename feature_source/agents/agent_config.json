@@ -1,0 +1,11 @@
+{
+    "docs_url": "https://docs.polymarket.com",
+    "cache_path": "polymarket_knowledge.json",
+    "cache_ttl_hours": 24,
+    "endpoints": {
+        "quickstart": "/quickstart/overview",
+        "clob_api": "/trading/clob",
+        "gamma_api": "/markets/gamma",
+        "order_types": "/trading/order-types"
+    }
+}

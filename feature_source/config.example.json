@@ -1,0 +1,88 @@
+{
+  // ==========================================
+  //      BTC Polymarket Bot Configuration (Example)
+  // ==========================================
+  // [다중 지갑 사용 안내]
+  // 1. 기본 설정 항목들은 모든 지갑에 공통으로 적용됩니다.
+  // 2. 특정 지갑에만 다른 설정을 적용하려면 항목 뒤에 _1, _2 등을 붙이세요.
+  //    예: "bet_amount_usdc": 10.0 (기본)
+  //        "bet_amount_usdc_1": 50.0 (첫 번째 추가 지갑만 50달러 베팅)
+  // 3. "private_key"와 "proxy_address"가 설정된 번호까지 자동으로 인식하여 실행됩니다.
+
+  // --- 자산 설정 ---
+  // 거래할 자산 목록 (BTC, ETH 등)
+  "enabled_assets": [
+    "BTC",
+    "ETH"
+  ],
+
+  // --- 기본 트레이딩 설정 ---
+  // 기본 베팅 금액 (USDC)
+  "bet_amount_usdc": 10.0,
+  // 최대 포지션 크기 (USDC)
+  "max_position_size": 100.0,
+  // 켈리 베팅 사용 여부 (True/False)
+  "use_kelly": false,
+  // 웹 대시보드 포트 (기본: 8000)
+  "web_port": 3001,
+  // 폴리곤 RPC URL (URL 내 // 문자 보호됨)
+  // 안정적인 거래를 위해 개인 RPC 사용을 권장합니다. (예: Alchemy, Infura)
+  "web3_rpc_url": "https://rpc.ankr.com/polygon",
+
+  // --- 엣지(유리함) 계산 설정 ---
+  // 진입을 위한 최소 기대수익률 (%)
+  "edge_threshold_pct": 3.0,
+  // 기대수익률에서 스프레드 비용을 차감할지 여부
+  "subtract_spread_from_edge": true,
+  // 변동성 계산을 위한 데이터 기간 (분)
+  "volatility_window_minutes": 60,
+
+  // --- 슈어벳(Sure-Bet) 차익거래 설정 ---
+  // YES/NO 가격 합이 1 미만일 때 무위험 차익거래 실행 여부
+  "surebet_enabled": true,
+
+  // --- 역추세(Contrarian) 전략 설정 ---
+  "contrarian_enabled": true,
+  // 역추세 진입 최소 엣지 (%)
+  "contrarian_entry_edge_min": 3.0,
+  // 역추세 진입 최대 엣지 (%)
+  "contrarian_entry_edge_max": 10.0,
+  // 청산(익절) 기준 엣지 (%)
+  "contrarian_exit_edge": 1.0,
+  // 목표 수익률 (%)
+  "contrarian_take_profit_pct": 3.0,
+
+  // --- 엣지 헤지 전략 (확률 차이를 이용한 양방향 베팅) ---
+  "edge_hedge_enabled": true,
+  // 헤지 진입을 위한 최소 엣지 차이 (%)
+  "edge_hedge_min_edge_pct": 10.0,
+  // 헤지 포지션 익절 기준 (%)
+  "edge_hedge_profit_threshold_pct": 7.0,
+  // 헤지 포지션 손절 기준 (%)
+  "edge_hedge_stoploss_pct": 15.0,
+
+  // --- 자동 정산(Redeem) 설정 ---
+  // 포지션 정산 자동 실행 여부 (True/False)
+  "auto_redeem_enabled": true,
+
+  // --- 마감 직전 스나이핑(Buzzer Beater) 전략 ---
+  // 스나이핑 전략 활성화 여부 (기본값: False)
+  "expiry_sniper_enabled": false,
+  // 마감 몇 분 전부터 감시할지
+  "expiry_sniper_minutes_before": 3,
+  // 진입을 위한 최소 확률 (98% 이상 확실할 때)
+  "expiry_sniper_prob_threshold": 95.0,
+  // 스나이핑 1회 베팅 금액
+  "expiry_sniper_amount_usdc": 10.0,
+  // 한 마켓당 최대 진입 횟수
+  "expiry_sniper_max_times": 3,
+  "expiry_sniper_interval_seconds": 60,
+  // 스나이핑 후 확률 하락 시 헷지 기준 (%)
+  "sniper_hedge_prob_threshold": 90.0,
+
+  // --- 비상 설정 ---
+  // 글로벌 스탑로스 (전체 포지션 -20% 손실 시 강제 헷지)
+  "global_stoploss_pct": 20.0,
+  // 봇 시작 시 보유한 모든 포지션을 반대 방향 매수로 강제 청산(Lock)할지 여부
+  "emergency_cleanup_on_start": false
+}
